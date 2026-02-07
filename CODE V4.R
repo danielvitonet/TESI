@@ -17,7 +17,7 @@ cran_pkgs <- c(
   "dbarts",            # R\L sampling trees
   "MASS",              # R\L
   
-  "abind",              # R   for MFBAVART-SV
+  #"abind",              # R   for MFBAVART-SV
   
   "mvtnorm",           # L   for mix$mixBART
   "invgamma"           # L   for mix$mixBART
@@ -25,14 +25,14 @@ cran_pkgs <- c(
 
 # Pin these versions (required by my code + to prevent stochvol being upgraded by factorstochvol)
 pin_versions <- list(
-  stochvol       = "3.2.8",        # 2.0.4", # R\L ver: 2.0.4 for sampling stochastic volatilities
-  factorstochvol = "1.1.0"              # 0.9.3"  # L   for mix$mixBART , compatible with stochvol >= 2.0.4
+  stochvol       = "3.2.8",        # R\L for sampling stochastic volatilities
+  factorstochvol = "1.1.0"         # L   for mix$mixBART , compatible with stochvol
 )
 
 # GitHub remotes (package name -> repo)
 github_pkgs <- c(
-  fatBVARS = "hoanguc3m/fatBVARS", # L   for BVAR-SV     , "hoanguc3m/fatBVARS" on GitHub
-  mfbvar   = "ankargren/mfbvar"    # R   for MFBAVART-SV , "ankargren/mfbvar" on GitHub
+  fatBVARS = "hoanguc3m/fatBVARS"   # L   for BVAR-SV     , "hoanguc3m/fatBVARS" on GitHub
+  #mfbvar   = "ankargren/mfbvar"    # R   for MFBAVART-SV , "ankargren/mfbvar" on GitHub
 )
 
 
@@ -85,7 +85,7 @@ set.seed(123) # allow reproducibility
 # 1) Path alla repo "vendorizzata" dentro ext/                              #
 mf_dir <- here::here("ext", "mf-bavart")                                    #
 list.files(mf_dir)
-# 2) Crea un environment dedicato per non sporcare il Global Env            #                                          #
+# 2) Crea un environment dedicato per non sporcare il Global Env            #
 mf <- new.env(parent = globalenv())                                         #
 #
 # 3) Carica i file R nell’environment mf                                    #
@@ -98,7 +98,7 @@ sys.source(file.path(mf_dir, "mfbavart_func.R"), envir = mf, chdir = TRUE)  #
 # 1) Path alla repo                                                         #
 mix_dir <- here::here("ext", "flexBART")                                    #
 list.files(mix_dir)
-# 2) Crea un environment dedicato per non sporcare il Global Env            #                                         #
+# 2) Crea un environment dedicato per non sporcare il Global Env            #
 mix <- new.env(parent = globalenv())                                        #
 #
 # 3) Carica i file R nell’environment mix                                   #
@@ -244,11 +244,10 @@ quantile_scores_path <- here::here("quantile_scores.csv")
 qwcrps_scores_path <- here::here("qwcrps_scores.csv")
 forecast_history_path <- here::here("forecast_history.csv")
 
-#jx = 73   
-# 12*6+1 = 73 (6 years and 1 month), is the column representing the 1997M1 data vintage for when we do not use future contracts data.
-#jx = 222  
+
+# jx = 222  
 # 222 is the column representing the 2009M6 data vintage for which at least 228 observations for future contracts data is available.
-# change 37 with 210 , and change 36 with 209 , when using future contracts data
+# 210 row start , and 209 row start when difference variable (we loose one observation otherwise).
 
 for (jx in (12*18+6):(ncol(CPI_AC)-h)) {  # adjust for evaluation period 2009M6 to 2024M2
   print(jx)
@@ -284,8 +283,7 @@ for (jx in (12*18+6):(ncol(CPI_AC)-h)) {  # adjust for evaluation period 2009M6 
   # futures contract variable
   futgasrt <- log(fut[210:ind, ])
   spotgasrt <- log(NG_HENRY[210:ind, jx])
-  inflrt <- log(CPI_AC[(ind - 120 + 2):ind, jx]) - log(CPI_AC[(ind - 120 + 1):(ind - 1), jx]) # average inflation over the past 10 years
-  #inflrt <- log(CPI_AC[210:ind, jx]) - log(CPI_AC[209:(ind - 1), jx]) # monthly inflation
+  inflrt <- log(CPI_AC[(ind - 120 + 2):ind, jx]) - log(CPI_AC[(ind - 120 + 1):(ind - 1), jx]) # # monthly inflation to calculate average inflation over the past 10 years
   
   jj <- switch(as.character(h),
                "1" = 1,
@@ -298,13 +296,7 @@ for (jx in (12*18+6):(ncol(CPI_AC)-h)) {  # adjust for evaluation period 2009M6 
                "21" = 8,
                "24" = 9)
   
-  futs <- futgasrt[, 2] - spotgasrt - ((1 + mean(inflrt))^3 - 1)
-  #infl_ma <- stats::filter(inflrt, rep(1 / 120, 120), sides = 1) # 10-year rolling average
-  #infl_exp <- (1 + infl_ma)^h - 1
-  #infl_exp <- (1 + infl_ma)^3 - 1
-  #futs <- ts(futgasrt[, jj] - spotgasrt - as.numeric(infl_exp), frequency = 12)
-  #futs <- futgasrt[, jj] - spotgasrt - as.numeric(infl_exp)
-  #futs <- futgasrt[, 2] - spotgasrt - as.numeric(infl_exp)
+  futs <- futgasrt[, 2] - spotgasrt - ((1 + mean(inflrt))^3 - 1) # jj = 2 , we choose to always use future-spot real spread for 3 months contracts always.
   
   # Create revised real price of natural gas (most recent vintage)
   x <- 100 * NG_May24[210:(ind + h), 1] / CPI_May24[210:(ind + h), 1]  # Real gas price (nominal deflated by US CPI)
@@ -532,3 +524,4 @@ utils::write.csv(
   here::here("ds_scores_rel.csv"),
   row.names = FALSE
 )
+
