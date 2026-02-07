@@ -20,7 +20,7 @@ The rest of the files are:
 - `fcst_script.R` contains an example code for using the function.
 
 ### Inputs for flexBART(...)
-- Yraw            numeric matrix with time observations in rows and variables in columns (T × M).
+- `Yraw`            numeric matrix with time observations in rows and variables in columns (T × M).
                   standardized in-place using column means/sds, with na.rm=TRUE allowed, and then used to form the lagged design matrix and response matrix. 
                   This implies:
                   - Rows = time points.
@@ -28,46 +28,46 @@ The rest of the files are:
                   - NAs are allowed (used with na.rm for means/sds).
                   Evidence: standardization and creation of X/Y rely on matrix structure and columnwise means/sds.
 
-- nburn           scalar integer (number of burn-in MCMC draws).
+- `nburn`           scalar integer (number of burn-in MCMC draws).
                   burn-in length and BART control parameter n.burn.
 
-- nsave           scalar integer (number of saved draws).
+- `nsave`           scalar integer (number of saved draws).
                   defines total samples ntot, thinning count nthin, and BART control n.samples.
 
-- thinfac         (default 1) numeric scalar; thinning multiplier.
+- `thinfac`         (default 1) numeric scalar; thinning multiplier.
                   Used in nthin <- round(thinfac * nsave) to select how many draws are stored.
 
-- prior           string flag; the code checks for "Minn" to switch to a Minnesota prior branch.
+- `prior`           string flag; the code checks for "Minn" to switch to a Minnesota prior branch.
                   Used as "Minn" triggers Minnesota prior logic for VAR coefficients. Otherwise HS prior machinery is used (default).
 
-- prior.sig       numeric vector of length 2 (shape and scale parameters) for the BART residual prior (chisq).
+- `prior.sig`       numeric vector of length 2 (shape and scale parameters) for the BART residual prior (chisq).
                   Used as chisq(prior.sig[[1]], prior.sig[[2]]) for each equation’s BART residual prior (unless overridden by sv). In sv == "SV" or "heteroBART" it is internally overridden to c(10000^50, 0.5).
 
-- model           (default "mixBART") string flag; "mixBART" or "BART" enables BART-driven mean dynamics; other values imply linear VAR-only behavior.
+- `model`           (default "mixBART") string flag; "mixBART" or "BART" enables BART-driven mean dynamics; other values imply linear VAR-only behavior.
                   Used as branch for whether tree predictions are used when sampling and forecasting.
 
-- sv              string flag. Recognized values include "SV", "heteroBART", and "homo" (as seen in script usage).
+- `sv`              string flag. Recognized values include "SV", "heteroBART", and "homo" (as seen in script usage).
                   Used as controls stochastic volatility modeling and associated priors; "SV" builds stochastic volatility priors; "heteroBART" uses BART to model volatility. This also changes how prior.sig is set. 
 
-- fc.approx       string flag; valid values used in code are "exact" and "approx".
+- `fc.approx`       string flag; valid values used in code are "exact" and "approx".
                   Used as switches between exact sampling of the forecast mean (with BART mean + VAR) vs. an approximate form using (A_approx + PHI_draw).
 
-- restr.var       NULL or a column name matching colnames(Y); the code uses which(colnames(Y)==restr.var).
+- `restr.var`       NULL or a column name matching colnames(Y); the code uses which(colnames(Y)==restr.var).
                   Used as if non-NULL, forecasts are conditional on specified variable values across quantile grid range.conditional, which adds an extra R dimension to outputs.
 
-- fhorz           scalar integer; number of forecast steps.
+- `fhorz`           scalar integer; number of forecast steps.
                   Used as forecast horizon dimension in arrays and loop bounds.
 
-- quiet           logical scalar. 
+- `quiet`           logical scalar. 
                   Used as if FALSE, shows progress bar and diagnostic plotting during sampling. 
 
-- pr.mean         numeric matrix (M × M) used for the prior mean of the linear VAR coefficients.
+- `pr.mean`         numeric matrix (M × M) used for the prior mean of the linear VAR coefficients.
                   Used as inserted into A_prior for the first M rows/columns, so it must be compatible with the dimension M = ncol(Y).
 
 The function returns a list with two elements:
 list("fcst" = fcst_store, "Hfcst" = Hfcst_store)
 
-- fcst            numeric array of forecast draws.
+- `fcst`            numeric array of forecast draws.
                   Dimensions:
                   - If restr.var is NULL: c(nthin, fhorz, M).
                   - If restr.var is not NULL: c(nthin, fhorz, M, R) where R is the number of conditional quantile grid points. 
@@ -79,7 +79,7 @@ list("fcst" = fcst_store, "Hfcst" = Hfcst_store)
                   Unconditional branch rescales explicitly when storing.
                   Conditional branch stores Y.tp1 * Ysd + Ymu before storing.
 
-- Hfcst           numeric array of forecast volatility draws (per series).
+- `Hfcst`           numeric array of forecast volatility draws (per series).
                   Dimensions: same as fcst (c(nthin, fhorz, M) or c(nthin, fhorz, M, R)).
                   Dimnames: identical to fcst.
                   Scale: rescaled by Ysd in unconditional branch; conditional branch stores exp(HT) * Ysd.
